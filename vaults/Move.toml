@@ -1,9 +1,0 @@
-[package]
-name="vaults"
-version="0.1.0"
-authors=["Wyner <hoangbach0985@gmail.com>"]
-
-[addresses]
-
-[dependencies]
-
