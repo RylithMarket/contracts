@@ -2,6 +2,7 @@
 name = "core"
 edition = "2024.beta"
 authors = ["Wyner (hoangbach0985@gmail.com)"]
+published-at = "0xbd990a04d0dc81dbfa1cd14457e6640046fa77981bdd855593f31cb99381cd1c"
 
 [dependencies]
 
@@ -17,7 +18,7 @@ authors = ["Wyner (hoangbach0985@gmail.com)"]
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
-core = "0x0"
+core = "0xbd990a04d0dc81dbfa1cd14457e6640046fa77981bdd855593f31cb99381cd1c"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.
