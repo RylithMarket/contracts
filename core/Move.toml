@@ -18,7 +18,7 @@ published-at = "0xbd990a04d0dc81dbfa1cd14457e6640046fa77981bdd855593f31cb99381cd
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
-core = "0xbd990a04d0dc81dbfa1cd14457e6640046fa77981bdd855593f31cb99381cd1c"
+core = "0x0"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.

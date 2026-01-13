@@ -20,6 +20,7 @@ core = { local = "../core" }
 
 [addresses]
 marketplace = "0x0"
+core = "0x1bc997dad699461e750aa7916b3b96d8666bb18dc08f7a3de51f90ac2d5c046e"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.

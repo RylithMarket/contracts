@@ -3,6 +3,7 @@ module core::vault;
 use core::events;
 use std::string::{Self, String};
 use std::type_name;
+use sui::address;
 use sui::clock::{Self, Clock};
 use sui::display;
 use sui::dynamic_object_field as dof;
@@ -25,7 +26,6 @@ public struct StrategyVault has key, store {
     name: String,
     description: String,
     strategy_type: String,
-    img_url: String,
     created_at: u64,
 }
 
@@ -49,10 +49,13 @@ fun init(otw: VAULT, ctx: &mut TxContext) {
     let mut vault_url = base_url;
     vault_url.append(string::utf8(b"vault/{id}/"));
 
+    let mut img_url = base_url;
+    img_url.append(string::utf8(b"vaults/{id}/image.png"));
+
     let values = vector[
         b"{name}".to_string(),
         vault_url,
-        b"{img_url}".to_string(),
+        img_url,
         b"{description}".to_string(),
         base_url,
         b"Rylith Protocol".to_string(),
@@ -75,7 +78,6 @@ public fun create(
     name: vector<u8>,
     description: vector<u8>,
     strategy_type: vector<u8>,
-    img_url: vector<u8>,
     clock: &Clock,
     ctx: &mut TxContext,
 ): StrategyVault {
@@ -87,7 +89,6 @@ public fun create(
         name: string::utf8(name),
         description: string::utf8(description),
         strategy_type: string::utf8(strategy_type),
-        img_url: string::utf8(img_url),
         created_at: tx_context::epoch(ctx),
     };
 
@@ -165,14 +166,23 @@ public fun keep(vault: StrategyVault, ctx: &mut TxContext) {
 }
 
 public fun destroy(vault: StrategyVault) {
-    let StrategyVault { id, name: _, description: _, strategy_type: _, img_url: _, created_at: _ } =
-        vault;
+    let StrategyVault { id, name: _, description: _, strategy_type: _, created_at: _ } = vault;
 
     events::emit_vault_destroyed(
         object::uid_to_inner(&id),
     );
 
     object::delete(id);
+}
+
+// === Utils ===
+public fun get_vault_metadata(vault: &StrategyVault): String {
+    let vault_id = object::uid_to_address(&vault.id);
+    let mut img_url = string::utf8(DEFAULT_URL);
+    img_url.append(string::utf8(b"vaults/"));
+    img_url.append(address::to_string(vault_id));
+    img_url.append(string::utf8(b"/image.png"));
+    img_url
 }
 
 // === Unit Tests ===
@@ -224,7 +234,6 @@ fun test_vault_flow() {
             b"My Vault",
             b"This is a test vault",
             b"Test Strategy",
-            b"http://example.com/image.png",
             &clock,
             ctx,
         );
@@ -289,7 +298,6 @@ fun test_unauthorized() {
             b"My Vault",
             b"This is a test vault",
             b"Test Strategy",
-            b"http://example.com/image.png",
             &clock,
             ctx,
         );
@@ -326,7 +334,6 @@ fun test_deposit_existing_asset() {
             b"My Vault",
             b"This is a test vault",
             b"Test Strategy",
-            b"http://example.com/image.png",
             &clock,
             ctx,
         );
@@ -362,7 +369,6 @@ fun test_transfer_to_other_user() {
             b"My Vault",
             b"This is a test vault",
             b"Test Strategy",
-            b"http://example.com/image.png",
             &clock,
             ctx,
         );
@@ -392,7 +398,7 @@ fun test_withdraw_wrong_type() {
     next_tx(&mut scenario, WYNER_ADDR);
     {
         let ctx = ts::ctx(&mut scenario);
-        let mut vault = create(b"My Vault", b"Desc", b"Type", b"URL", &clock, ctx);
+        let mut vault = create(b"My Vault", b"Desc", b"Type", &clock, ctx);
 
         let asset = LpToken { id: object::new(ctx), amount: 100 };
 
@@ -413,7 +419,7 @@ fun test_borrow_mut_asset() {
     next_tx(&mut scenario, WYNER_ADDR);
     {
         let ctx = ts::ctx(&mut scenario);
-        let vault = create(b"My Vault", b"Desc", b"Type", b"URL", &clock, ctx);
+        let vault = create(b"My Vault", b"Desc", b"Type", &clock, ctx);
 
         keep(vault, ctx);
     };
@@ -440,7 +446,7 @@ fun test_borrow_mut_asset_unauthorized() {
     next_tx(&mut scenario, WYNER_ADDR);
     {
         let ctx = ts::ctx(&mut scenario);
-        let vault = create(b"My Vault", b"Desc", b"Type", b"URL", &clock, ctx);
+        let vault = create(b"My Vault", b"Desc", b"Type", &clock, ctx);
 
         keep(vault, ctx);
     };
