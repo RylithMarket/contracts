@@ -1,7 +1,6 @@
 module core::vault;
 
 use core::events;
-use std::ascii;
 use std::string::{Self, String};
 use std::type_name;
 use sui::clock::{Self, Clock};
@@ -18,6 +17,9 @@ const EAlreadyExist: u64 = 0402;
 const EUnauthorized: u64 = 0403;
 const ETypeMismatch: u64 = 0404;
 
+// === Constants ===
+const DEFAULT_URL: vector<u8> = b"https://rylith.space/";
+
 public struct StrategyVault has key, store {
     id: UID,
     name: String,
@@ -33,6 +35,7 @@ public struct AssetKey has copy, drop, store {
 
 fun init(otw: VAULT, ctx: &mut TxContext) {
     let publisher = package::claim(otw, ctx);
+    let base_url = string::utf8(DEFAULT_URL);
 
     let keys = vector[
         b"name".to_string(),
@@ -43,12 +46,15 @@ fun init(otw: VAULT, ctx: &mut TxContext) {
         b"creator".to_string(),
     ];
 
+    let mut vault_url = base_url;
+    vault_url.append(string::utf8(b"vault/{id}/"));
+
     let values = vector[
         b"{name}".to_string(),
-        b"https://rylith.xyz/vault/{id}".to_string(),
+        vault_url,
         b"{img_url}".to_string(),
         b"{description}".to_string(),
-        b"https://rylith.xyz".to_string(),
+        base_url,
         b"Rylith Protocol".to_string(),
     ];
 
@@ -169,6 +175,7 @@ public fun destroy(vault: StrategyVault) {
     object::delete(id);
 }
 
+// === Unit Tests ===
 #[test_only]
 use std::unit_test::assert_eq;
 #[test_only]
