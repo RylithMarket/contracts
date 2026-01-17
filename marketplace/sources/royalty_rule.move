@@ -14,6 +14,8 @@ public struct Config has drop, store {
     min_amount: u64,
 }
 
+// === Main Functions ===
+
 public fun add<T>(
     policy: &mut TransferPolicy<T>,
     cap: &TransferPolicyCap<T>,
@@ -32,15 +34,21 @@ public fun pay<T>(
     let config: &Config = policy::get_rule(Rule {}, policy);
 
     let paid = policy::paid(request);
+    // Tính toán phí dựa trên Basis Points (bps)
     let expected_amount = (((paid as u128) * (config.amount_bps as u128) / 10_000) as u64);
 
+    // So sánh với mức phí tối thiểu
     let due_amount = if (expected_amount > config.min_amount) { expected_amount } else {
         config.min_amount
     };
 
+    // Kiểm tra tiền trả có đủ không
     assert!(coin::value(&payment) >= due_amount, EInsufficientAmount);
 
+    // Nạp tiền vào Policy (Coin bị tiêu thụ tại đây -> Safe for PTB)
     policy::add_to_balance(Rule {}, policy, payment);
+
+    // Đóng dấu đã trả tiền cho Rule này
     policy::add_receipt(Rule {}, request);
 }
 
@@ -62,7 +70,7 @@ fun create_request_via_purchase(
     let ctx = ts::ctx(scenario);
 
     let (mut kiosk, kiosk_cap) = kiosk::new(ctx);
-    let vault = vault::create(b"T", b"D", b"S", b"U", clock, ctx);
+    let vault = vault::create(b"Name", b"Desc", b"Strategy", clock, ctx);
     let item_id = object::id(&vault);
 
     kiosk::place(&mut kiosk, &kiosk_cap, vault);
@@ -134,6 +142,7 @@ fun test_pay_normal() {
         );
 
         let ctx = ts::ctx(&mut scenario);
+        // 1.5% của 100 SUI = 1.5 SUI
         let fee_amount = 1_500_000_000;
         let payment = sui::coin::mint_for_testing<SUI>(fee_amount, ctx);
 
@@ -161,6 +170,7 @@ fun test_pay_min_amount() {
             (p, c)
         };
 
+        // Giá nhỏ: 0.1 SUI
         let price = 100_000_000;
         let (kiosk, kiosk_cap, item, mut req) = create_request_via_purchase(
             &mut scenario,
@@ -169,6 +179,7 @@ fun test_pay_min_amount() {
         );
 
         let ctx = ts::ctx(&mut scenario);
+        // 10% của 0.1 là 0.01 -> Nhỏ hơn min 1 SUI -> Phải trả 1 SUI
         let payment = sui::coin::mint_for_testing<SUI>(1_000_000_000, ctx);
 
         pay(&mut policy, &mut req, payment, ctx);
@@ -203,9 +214,10 @@ fun test_pay_fail_insufficient() {
         );
 
         let ctx = ts::ctx(&mut scenario);
+        // Trả thiếu (0.5 SUI thay vì 1.5 SUI)
         let payment = sui::coin::mint_for_testing<SUI>(500_000_000, ctx);
 
-        pay(&mut policy, &mut req, payment, ctx); // FAIL
+        pay(&mut policy, &mut req, payment, ctx); // Sẽ fail tại đây
 
         policy::confirm_request(&policy, req);
         cleanup(kiosk, kiosk_cap, item, policy, cap, ctx);

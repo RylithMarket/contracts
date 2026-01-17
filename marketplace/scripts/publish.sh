@@ -16,4 +16,13 @@ fi
 
 echo "Published package: $PACKAGE_ID"
 
-sui client call --package "$PACKAGE_ID" --module venue --function setup_rylith_market --gas-budget 100000000
+# Get the Publisher object ID from the user's objects
+PUBLISHER_ID=$(sui client objects --json 2>/dev/null | jq -r '.[] | select(.objectType | contains("package::Publisher")) | .objectId' | tail -1)
+
+if [ -z "$PUBLISHER_ID" ] || [ "$PUBLISHER_ID" == "null" ]; then
+    echo "Failed to find Publisher object. Please run: sui client objects"
+    exit 1
+fi
+
+echo "Using Publisher: $PUBLISHER_ID"
+sui client call --package "$PACKAGE_ID" --module venue --function setup_rylith_market --args "$PUBLISHER_ID" --gas-budget 100000000
